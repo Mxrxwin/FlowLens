@@ -10,6 +10,7 @@ export default defineConfig({
     port: 5174,
     proxy: {
       '/api': 'http://localhost:8080',
+      '/ingest': 'http://localhost:8080',
     },
   },
 });
