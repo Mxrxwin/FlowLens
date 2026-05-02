@@ -34,3 +34,11 @@ func (r *EventsRepo) Insert(ctx context.Context, p InsertEventParams) (uuid.UUID
 	`, p.Type, p.SessionID, p.Timestamp, p.Region, p.UserAgent, p.Payload).Scan(&id)
 	return id, err
 }
+
+func (r *EventsRepo) CountSince(ctx context.Context, since time.Time) (int, error) {
+	var n int
+	err := r.pool.QueryRow(ctx, `
+		SELECT COUNT(*) FROM events WHERE timestamp >= $1
+	`, since).Scan(&n)
+	return n, err
+}

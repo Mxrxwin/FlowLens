@@ -1,4 +1,8 @@
 /docs
+/service-2/backend/logs
+/service-2/frontend/node_modules
+/service-2/frontend/dist
+/service-2/frontend/build
 
 # macOS
 .DS_Store

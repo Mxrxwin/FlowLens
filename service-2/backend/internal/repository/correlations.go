@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -83,4 +85,55 @@ func (r *CorrelationsRepo) UpsertGroups(
 			updated_at    = now()
 	`, endpoint, region, deviceType, windowMinutes, threshold)
 	return err
+}
+
+type CorrelationRow struct {
+	ErrorMessage string    `json:"error_message"`
+	Endpoint     string    `json:"endpoint"`
+	Region       string    `json:"region"`
+	DeviceType   string    `json:"device_type"`
+	Count        int       `json:"count"`
+	FirstSeenAt  time.Time `json:"first_seen_at"`
+	LastSeenAt   time.Time `json:"last_seen_at"`
+}
+
+// List returns up to `limit` correlations sorted either by `count` or by
+// `frequency` (count per minute over [first_seen_at, last_seen_at]).
+// `sort` must be "count" or "frequency" — caller is responsible for
+// validation; the value is interpolated only via a closed allowlist below.
+func (r *CorrelationsRepo) List(ctx context.Context, sort string, limit int) ([]CorrelationRow, error) {
+	var orderBy string
+	switch sort {
+	case "frequency":
+		orderBy = "count::float8 / GREATEST(EXTRACT(EPOCH FROM (last_seen_at - first_seen_at)) / 60.0, 1.0/60.0) DESC"
+	default:
+		orderBy = "count DESC"
+	}
+
+	q := fmt.Sprintf(`
+		SELECT error_message, endpoint, region, device_type,
+		       count, first_seen_at, last_seen_at
+		FROM correlations
+		ORDER BY %s
+		LIMIT $1
+	`, orderBy)
+
+	rows, err := r.pool.Query(ctx, q, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]CorrelationRow, 0, limit)
+	for rows.Next() {
+		var row CorrelationRow
+		if err := rows.Scan(
+			&row.ErrorMessage, &row.Endpoint, &row.Region, &row.DeviceType,
+			&row.Count, &row.FirstSeenAt, &row.LastSeenAt,
+		); err != nil {
+			return nil, err
+		}
+		out = append(out, row)
+	}
+	return out, rows.Err()
 }
