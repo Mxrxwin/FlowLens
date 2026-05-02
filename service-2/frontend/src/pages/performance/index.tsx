@@ -1,24 +1,20 @@
-import { useEffect, useState } from 'react';
 import { Spinner } from '@heroui/react';
 import { PerformanceChart } from '../../widgets/performance-chart';
-import { getPerformance } from '../../shared/api/client';
-import type { EndpointAvg } from '../../entities/performance/types';
+import { VitalsChart } from '../../widgets/vitals-chart';
+import { getPerformance, type PerformanceResponse } from '../../shared/api/client';
+import { usePolling } from '../../shared/lib/usePolling';
 
 export default function PerformancePage() {
-  const [items, setItems] = useState<EndpointAvg[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    getPerformance()
-      .then((d) => { if (!cancelled) setItems(d); })
-      .catch((e) => { if (!cancelled) setError(String(e)); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, []);
+  const { data, loading, error } = usePolling<PerformanceResponse>(() => getPerformance());
 
   if (loading) return <Spinner />;
   if (error) return <div className="text-danger">{error}</div>;
-  return <PerformanceChart items={items} />;
+
+  const safe = data ?? { endpoints: [], regions: [] };
+  return (
+    <div className="space-y-6">
+      <PerformanceChart items={safe.endpoints} />
+      <VitalsChart items={safe.regions} />
+    </div>
+  );
 }

@@ -59,10 +59,49 @@ func (r *PerformanceRepo) AvgByEndpoint(ctx context.Context, from, to time.Time)
 	}
 	defer rows.Close()
 
-	var out []EndpointAvg
+	out := make([]EndpointAvg, 0)
 	for rows.Next() {
 		var row EndpointAvg
 		if err := rows.Scan(&row.Endpoint, &row.AvgResponseTimeMs, &row.Samples); err != nil {
+			return nil, err
+		}
+		out = append(out, row)
+	}
+	return out, rows.Err()
+}
+
+type RegionVitals struct {
+	Region  string  `json:"region"`
+	AvgLCP  float64 `json:"avg_lcp"`
+	AvgFID  float64 `json:"avg_fid"`
+	AvgTTFB float64 `json:"avg_ttfb"`
+	Samples int     `json:"samples"`
+}
+
+func (r *PerformanceRepo) AvgVitalsByRegion(ctx context.Context, from, to time.Time) ([]RegionVitals, error) {
+	rows, err := r.pool.Query(ctx, `
+		SELECT COALESCE(NULLIF(ev.region, ''), 'unknown') AS region,
+		       COALESCE(AVG(pm.lcp),  0)::float8,
+		       COALESCE(AVG(pm.fid),  0)::float8,
+		       COALESCE(AVG(pm.ttfb), 0)::float8,
+		       COUNT(*)
+		FROM performance_metrics pm
+		JOIN events ev ON pm.event_id = ev.id
+		WHERE ev.timestamp >= $1
+		  AND ev.timestamp <= $2
+		  AND (pm.lcp IS NOT NULL OR pm.fid IS NOT NULL OR pm.ttfb IS NOT NULL)
+		GROUP BY COALESCE(NULLIF(ev.region, ''), 'unknown')
+		ORDER BY region
+	`, from, to)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]RegionVitals, 0)
+	for rows.Next() {
+		var row RegionVitals
+		if err := rows.Scan(&row.Region, &row.AvgLCP, &row.AvgFID, &row.AvgTTFB, &row.Samples); err != nil {
 			return nil, err
 		}
 		out = append(out, row)

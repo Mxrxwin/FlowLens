@@ -24,11 +24,22 @@ func (h *PerformanceHandler) List(c *gin.Context) {
 		return
 	}
 
-	items, err := h.repo.AvgByEndpoint(c.Request.Context(), from, to)
+	ctx := c.Request.Context()
+
+	endpoints, err := h.repo.AvgByEndpoint(ctx, from, to)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"items": items})
+	regions, err := h.repo.AvgVitalsByRegion(ctx, from, to)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"endpoints": endpoints,
+		"regions":   regions,
+	})
 }
