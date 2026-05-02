@@ -10,6 +10,7 @@ import (
 	"service-2/internal/correlation"
 	"service-2/internal/model"
 	"service-2/internal/repository"
+	"service-2/internal/ua"
 )
 
 type Processor struct {
@@ -39,13 +40,18 @@ func (p *Processor) HandleEvent(ctx context.Context, raw []byte) error {
 		return fmt.Errorf("unmarshal event: %w", err)
 	}
 
+	uaInfo := ua.Parse(ev.UserAgent)
+
 	eventID, err := p.events.Insert(ctx, repository.InsertEventParams{
-		Type:      ev.Type,
-		SessionID: ev.SessionID,
-		Timestamp: time.UnixMilli(ev.Timestamp),
-		Region:    ev.Region,
-		UserAgent: ev.UserAgent,
-		Payload:   raw,
+		Type:       ev.Type,
+		SessionID:  ev.SessionID,
+		Timestamp:  time.UnixMilli(ev.Timestamp),
+		Region:     ev.Region,
+		DeviceType: uaInfo.DeviceType,
+		Browser:    uaInfo.Browser,
+		OS:         uaInfo.OS,
+		UserAgent:  ev.UserAgent,
+		Payload:    raw,
 	})
 	if err != nil {
 		return fmt.Errorf("insert event: %w", err)
@@ -76,7 +82,7 @@ func (p *Processor) HandleEvent(ctx context.Context, raw []byte) error {
 		if err := p.correlations.OnError(ctx, correlation.ErrorContext{
 			Endpoint:   ev.Error.Endpoint,
 			Region:     ev.Region,
-			DeviceType: "", // UA parser not implemented yet — engine maps "" to "unknown"
+			DeviceType: uaInfo.DeviceType,
 		}); err != nil {
 			log.Printf("correlation: %v", err)
 		}

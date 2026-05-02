@@ -25,20 +25,46 @@ function buildErrorEvent(p: ErrorPayload) {
 }
 
 export function attachErrorCollector(): void {
+  // Resource load failures (img/script) also fire 'error' on window, but as
+  // plain Event with target=Element. Only handle real ErrorEvents with a
+  // genuine JS Error attached.
   window.addEventListener('error', (e) => {
+    if (!(e instanceof ErrorEvent)) return;
+    const err = e.error instanceof Error ? e.error : null;
+    const message = err?.message || e.message;
+    if (!message) return;
+
     sendImmediate(buildErrorEvent({
-      message: e.message || 'Uncaught error',
-      stack: e.error?.stack,
+      message,
+      stack: err?.stack,
       endpoint: window.location.pathname,
     }));
   });
 
   window.addEventListener('unhandledrejection', (e) => {
-    const reason: any = e.reason;
+    const reason = e.reason as unknown;
+    let message = '';
+    let stack: string | undefined;
+    let endpoint: string | undefined;
+
+    if (reason instanceof Error) {
+      message = reason.message;
+      stack = reason.stack;
+    } else if (typeof reason === 'string') {
+      message = reason;
+    } else if (reason && typeof reason === 'object') {
+      const r = reason as Record<string, any>;
+      message = typeof r.message === 'string' ? r.message : '';
+      stack = typeof r.stack === 'string' ? r.stack : undefined;
+      endpoint = typeof r.config?.url === 'string' ? r.config.url : undefined;
+    }
+
+    if (!message) return;
+
     sendImmediate(buildErrorEvent({
-      message: reason?.message ? String(reason.message) : String(reason),
-      stack: reason?.stack,
-      endpoint: reason?.config?.url || window.location.pathname,
+      message,
+      stack,
+      endpoint: endpoint || window.location.pathname,
     }));
   });
 }

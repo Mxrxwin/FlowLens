@@ -17,21 +17,30 @@ func NewEventsRepo(pool *pgxpool.Pool) *EventsRepo {
 }
 
 type InsertEventParams struct {
-	Type      string
-	SessionID string
-	Timestamp time.Time
-	Region    string
-	UserAgent string
-	Payload   []byte
+	Type       string
+	SessionID  string
+	Timestamp  time.Time
+	Region     string
+	DeviceType string
+	Browser    string
+	OS         string
+	UserAgent  string
+	Payload    []byte
 }
 
 func (r *EventsRepo) Insert(ctx context.Context, p InsertEventParams) (uuid.UUID, error) {
 	var id uuid.UUID
 	err := r.pool.QueryRow(ctx, `
-		INSERT INTO events (type, session_id, timestamp, region, user_agent, payload)
-		VALUES ($1, $2, $3, NULLIF($4, ''), $5, $6)
+		INSERT INTO events
+			(type, session_id, timestamp, region, device_type, browser, os, user_agent, payload)
+		VALUES
+			($1, $2, $3, NULLIF($4, ''), NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), $8, $9)
 		RETURNING id
-	`, p.Type, p.SessionID, p.Timestamp, p.Region, p.UserAgent, p.Payload).Scan(&id)
+	`,
+		p.Type, p.SessionID, p.Timestamp,
+		p.Region, p.DeviceType, p.Browser, p.OS,
+		p.UserAgent, p.Payload,
+	).Scan(&id)
 	return id, err
 }
 

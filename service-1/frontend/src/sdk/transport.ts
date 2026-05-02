@@ -13,11 +13,12 @@ export function sendImmediate(event: object): void {
 export function enqueueBatched(event: object): void {
   queue.push(event);
   if (timer === null) {
-    timer = window.setInterval(flush, FLUSH_INTERVAL_MS);
+    timer = window.setTimeout(flush, FLUSH_INTERVAL_MS);
   }
 }
 
 function flush(): void {
+  timer = null;
   if (queue.length === 0) return;
   const batch = queue.splice(0, queue.length);
   for (const ev of batch) fire(ev);
