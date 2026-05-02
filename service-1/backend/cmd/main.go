@@ -29,9 +29,14 @@ func main() {
 
 	producer := stream.NewProducer(rdb, streamKey)
 	ingest := handler.NewIngestHandler(producer)
+	catalog := handler.NewCatalogHandler()
+	checkout := handler.NewCheckoutHandler()
 
 	r := gin.Default()
 	r.POST("/ingest", ingest.Handle)
+	api := r.Group("/api")
+	api.GET("/catalog", catalog.List)
+	api.POST("/checkout", checkout.Create)
 
 	if err := r.Run(":" + port); err != nil {
 		log.Fatal(err)
