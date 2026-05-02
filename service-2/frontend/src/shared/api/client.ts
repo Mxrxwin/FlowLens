@@ -5,7 +5,7 @@ import type { EndpointAvg } from '../../entities/performance/types';
 import type { CorrelationRow, CorrelationSort } from '../../entities/correlation/types';
 
 export const api = axios.create({
-  baseURL: 'http://localhost:8081',
+  baseURL: import.meta.env.VITE_API_URL,
 });
 
 interface Items<T> { items: T[] }

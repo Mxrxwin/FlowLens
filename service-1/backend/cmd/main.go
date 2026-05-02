@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 
 	"service-1/internal/handler"
@@ -14,8 +15,15 @@ import (
 const streamKey = "monitoring-events"
 
 func main() {
+	// Single source of truth — root .env at the monorepo root.
+	// CWD on `go run ./cmd` is service-1/backend, so root is two dirs up.
+	// In Docker we pass env vars directly; missing file is not fatal.
+	if err := godotenv.Load("../../.env"); err != nil {
+		log.Printf(".env not loaded (%v); using process env", err)
+	}
+
 	redisAddr := getEnv("REDIS_ADDR", "localhost:6379")
-	port := getEnv("PORT", "8080")
+	port := getEnv("SERVICE1_PORT", "8080")
 
 	rdb := redis.NewClient(&redis.Options{Addr: redisAddr})
 

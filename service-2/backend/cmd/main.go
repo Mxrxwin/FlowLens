@@ -10,8 +10,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 
 	"service-2/internal/consumer"
@@ -27,9 +29,16 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
+	// Single source of truth — root .env at the monorepo root.
+	// CWD on `go run ./cmd` is service-2/backend, so root is two dirs up.
+	// In Docker we pass env vars directly; missing file is not fatal.
+	if err := godotenv.Load("../../.env"); err != nil {
+		log.Printf(".env not loaded (%v); using process env", err)
+	}
+
 	redisAddr := getEnv("REDIS_ADDR", "localhost:6379")
 	dbURL := getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/monitoring?sslmode=disable")
-	httpAddr := ":" + getEnv("PORT", "8080")
+	httpAddr := ":" + getEnv("SERVICE2_PORT", "8081")
 
 	pool, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
@@ -58,6 +67,13 @@ func main() {
 	cons := consumer.New(rdb, streamKey, proc)
 
 	r := gin.Default()
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowCredentials: false,
+		MaxAge:           12 * time.Hour,
+	}))
 	api := r.Group("/api")
 	api.GET("/overview", handler.NewOverview(eventsRepo, errorsRepo).Handle)
 	api.GET("/errors", handler.NewErrors(errorsRepo).List)

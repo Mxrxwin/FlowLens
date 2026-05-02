@@ -1,0 +1,50 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+
+  service1-backend:
+    build: ./service-1/backend
+    env_file: ./.env
+    depends_on:
+      - redis
+    restart: on-failure
+    ports:
+      - "${SERVICE1_PORT}:${SERVICE1_PORT}"
+
+  service2-backend:
+    build: ./service-2/backend
+    env_file: ./.env
+    depends_on:
+      - redis
+      - postgres
+    restart: on-failure
+    ports:
+      - "${SERVICE2_PORT}:${SERVICE2_PORT}"
+
+  service2-frontend:
+    build: ./service-2/frontend
+    env_file: ./.env
+    depends_on:
+      - service2-backend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./service-2/frontend:/app
+      - /app/node_modules
+
+volumes:
+  pgdata:
