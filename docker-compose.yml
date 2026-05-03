@@ -25,6 +25,17 @@ services:
     ports:
       - "${SERVICE1_PORT}:${SERVICE1_PORT}"
 
+  service1-frontend:
+    build: ./service-1/frontend
+    env_file: ./.env
+    depends_on:
+      - service1-backend
+    ports:
+      - "5174:5174"
+    volumes:
+      - ./service-1/frontend:/app
+      - /app/node_modules
+
   service2-backend:
     build: ./service-2/backend
     env_file: ./.env

@@ -74,9 +74,11 @@ func main() {
 		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
 	}))
+	errorsAPI := handler.NewErrors(errorsRepo)
 	api := r.Group("/api")
 	api.GET("/overview", handler.NewOverview(eventsRepo, errorsRepo).Handle)
-	api.GET("/errors", handler.NewErrors(errorsRepo).List)
+	api.GET("/errors", errorsAPI.List)
+	api.GET("/errors/:id", errorsAPI.Detail)
 	api.GET("/performance", handler.NewPerformance(perfRepo).List)
 	api.GET("/correlations", handler.NewCorrelations(corrRepo).List)
 

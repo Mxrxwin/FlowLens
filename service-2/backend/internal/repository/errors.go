@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -86,4 +87,40 @@ func (r *ErrorsRepo) List(ctx context.Context, p ListErrorsParams) ([]ErrorRow, 
 		out = append(out, row)
 	}
 	return out, rows.Err()
+}
+
+type ErrorDetail struct {
+	ID               uuid.UUID       `json:"id"`
+	Message          string          `json:"message"`
+	StackTrace       string          `json:"stack_trace"`
+	Endpoint         string          `json:"endpoint"`
+	Timestamp        time.Time       `json:"timestamp"`
+	Region           string          `json:"region"`
+	PrecedingActions json.RawMessage `json:"preceding_actions"`
+}
+
+// GetByID returns a single error joined with its event row, or pgx.ErrNoRows.
+func (r *ErrorsRepo) GetByID(ctx context.Context, id uuid.UUID) (ErrorDetail, error) {
+	var d ErrorDetail
+	var raw []byte
+	err := r.pool.QueryRow(ctx, `
+		SELECT er.id,
+		       er.message,
+		       COALESCE(er.stack_trace, ''),
+		       COALESCE(er.endpoint, ''),
+		       ev.timestamp,
+		       COALESCE(ev.region, ''),
+		       er.preceding_actions
+		FROM errors er
+		JOIN events ev ON er.event_id = ev.id
+		WHERE er.id = $1
+	`, id).Scan(&d.ID, &d.Message, &d.StackTrace, &d.Endpoint, &d.Timestamp, &d.Region, &raw)
+	if err != nil {
+		return ErrorDetail{}, err
+	}
+	if len(raw) == 0 || string(raw) == "null" {
+		raw = []byte("[]")
+	}
+	d.PrecedingActions = raw
+	return d, nil
 }
