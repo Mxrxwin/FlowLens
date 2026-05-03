@@ -1,16 +1,23 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
 
-// Dev frontend on 5174, /api proxied to service-1 backend.
-// Hardcoded port — keep config trivial; bump if SERVICE1_PORT differs.
-export default defineConfig({
-  plugins: [react()],
-  envDir: "../../",
-  server: {
-    port: 5174,
-    proxy: {
-      "/api": "http://localhost:8080",
-      "/ingest": "http://localhost:8080",
+// Proxy target switches by env:
+//   - local dev:  http://localhost:8080  (default fallback)
+//   - in Docker:  http://service1-backend:8080  (set via compose `environment:`)
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, '../../', '');
+  const backend = env.SERVICE1_BACKEND_URL || 'http://localhost:8080';
+
+  return {
+    plugins: [react()],
+    envDir: '../../',
+    server: {
+      host: '0.0.0.0',
+      port: 5174,
+      proxy: {
+        '/api': backend,
+        '/ingest': backend,
+      },
     },
-  },
+  };
 });

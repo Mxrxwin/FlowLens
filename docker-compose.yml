@@ -28,6 +28,8 @@ services:
   service1-frontend:
     build: ./service-1/frontend
     env_file: ./.env
+    environment:
+      SERVICE1_BACKEND_URL: http://service1-backend:8080
     depends_on:
       - service1-backend
     ports:

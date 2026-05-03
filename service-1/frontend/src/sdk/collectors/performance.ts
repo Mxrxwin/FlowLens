@@ -2,6 +2,7 @@ import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { getDeviceMeta } from '../geo';
 import { getSessionId } from '../index';
 import { enqueueBatched } from '../transport';
+import { reportError } from './errors';
 
 interface MonitoredConfig extends InternalAxiosRequestConfig {
   _skipMonitoring?: boolean;
@@ -30,12 +31,38 @@ export function attachPerformanceCollector(): void {
       return res;
     },
     (err) => {
-      if (err.config) report(err.config as MonitoredConfig, true);
+      const cfg = err?.config as MonitoredConfig | undefined;
+      if (cfg) {
+        report(cfg, true);
+        reportNetworkError(err, cfg);
+      }
       return Promise.reject(err);
     },
   );
 
   attachWebVitals();
+}
+
+function reportNetworkError(err: any, cfg: MonitoredConfig): void {
+  // Belt-and-suspenders: never recurse on our own /ingest posts.
+  if (cfg._skipMonitoring) return;
+  const url = cfg.url || '';
+  if (url.endsWith('/ingest')) return;
+
+  const message =
+    (err?.response?.data && typeof err.response.data.error === 'string'
+      ? err.response.data.error
+      : undefined) ||
+    (typeof err?.message === 'string' ? err.message : '') ||
+    'Request failed';
+
+  const stack = typeof err?.stack === 'string' ? err.stack : undefined;
+
+  reportError({
+    message,
+    stack,
+    endpoint: url || undefined,
+  });
 }
 
 function report(cfg: MonitoredConfig, isError: boolean): void {

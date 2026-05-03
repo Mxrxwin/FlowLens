@@ -3,10 +3,17 @@ import { getSessionId } from '../index';
 import { sendImmediate } from '../transport';
 import { getRecentActions } from './actions';
 
-interface ErrorPayload {
+export interface ErrorPayload {
   message: string;
   stack?: string;
   endpoint?: string;
+}
+
+// Public helper for other collectors (e.g. axios interceptor) to emit
+// type=error events using the same shape as window-level errors.
+export function reportError(p: ErrorPayload): void {
+  if (!p.message) return;
+  sendImmediate(buildErrorEvent(p));
 }
 
 function buildErrorEvent(p: ErrorPayload) {
