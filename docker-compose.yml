@@ -16,47 +16,25 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d:ro
 
-  service1-backend:
-    build: ./service-1/backend
-    env_file: ./.env
-    depends_on:
-      - redis
-    restart: on-failure
-    ports:
-      - "${SERVICE1_PORT}:${SERVICE1_PORT}"
-
-  service1-frontend:
-    build: ./service-1/frontend
-    env_file: ./.env
-    environment:
-      SERVICE1_BACKEND_URL: http://service1-backend:8080
-    depends_on:
-      - service1-backend
-    ports:
-      - "5174:5174"
-    volumes:
-      - ./service-1/frontend:/app
-      - /app/node_modules
-
-  service2-backend:
-    build: ./service-2/backend
+  backend:
+    build: ./backend
     env_file: ./.env
     depends_on:
       - redis
       - postgres
     restart: on-failure
     ports:
-      - "${SERVICE2_PORT}:${SERVICE2_PORT}"
+      - "${FLOWLENS_BACKEND_PORT}:${FLOWLENS_BACKEND_PORT}"
 
-  service2-frontend:
-    build: ./service-2/frontend
+  frontend:
+    build: ./frontend
     env_file: ./.env
     depends_on:
-      - service2-backend
+      - backend
     ports:
       - "5173:5173"
     volumes:
-      - ./service-2/frontend:/app
+      - ./frontend:/app
       - /app/node_modules
 
 volumes:
