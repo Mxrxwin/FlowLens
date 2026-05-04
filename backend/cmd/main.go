@@ -69,14 +69,20 @@ func main() {
 	producer := stream.NewProducer(rdb, streamKey)
 
 	r := gin.Default()
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"},
+
+	ingestAPI := r.Group("/")
+	ingestAPI.Use(cors.New(cors.Config{
+		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
 	}))
-	r.POST("/ingest", handler.NewIngest(producer).Handle)
+	ingestAPI.POST("/ingest", handler.NewIngest(producer).Handle)
+	ingestAPI.OPTIONS("/ingest", func(c *gin.Context) {
+		c.Status(http.StatusNoContent)
+	})
+
 	errorsAPI := handler.NewErrors(errorsRepo)
 	api := r.Group("/api")
 	api.GET("/overview", handler.NewOverview(eventsRepo, errorsRepo).Handle)
