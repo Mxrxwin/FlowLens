@@ -7,12 +7,27 @@ import { getErrors, type ErrorsQuery } from '../../shared/api/client';
 import { usePolling } from '../../shared/lib/usePolling';
 import type { ErrorRow } from '../../entities/error/types';
 
+const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+// Manual range wins if set; otherwise sliding preset window (to = now,
+// from = now - rangeMinutes). Recomputed on every fetch tick.
 function toQuery(f: ErrorsFilter): ErrorsQuery {
+  let from: Date;
+  let to: Date;
+
+  if (f.manual) {
+    from = f.manual.start.toDate(TZ);
+    to = f.manual.end.toDate(TZ);
+  } else {
+    to = new Date();
+    from = new Date(to.getTime() - f.rangeMinutes * 60_000);
+  }
+
   return {
     region:   f.region   || undefined,
     endpoint: f.endpoint || undefined,
-    from:     f.from ? new Date(f.from).toISOString() : undefined,
-    to:       f.to   ? new Date(f.to).toISOString()   : undefined,
+    from:     from.toISOString(),
+    to:       to.toISOString(),
   };
 }
 
@@ -23,7 +38,7 @@ export default function ErrorsPage() {
   const { data, loading, error } = usePolling<ErrorRow[]>(
     () => getErrors(toQuery(filter)),
     5000,
-    [filter.region, filter.endpoint, filter.from, filter.to],
+    [filter.region, filter.endpoint, filter.rangeMinutes, filter.manual],
   );
 
   return (
