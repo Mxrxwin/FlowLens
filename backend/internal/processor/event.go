@@ -44,6 +44,7 @@ func (p *Processor) HandleEvent(ctx context.Context, raw []byte) error {
 
 	eventID, err := p.events.Insert(ctx, repository.InsertEventParams{
 		Type:       ev.Type,
+		ProjectKey: ev.ProjectKey,
 		SessionID:  ev.SessionID,
 		Timestamp:  time.UnixMilli(ev.Timestamp),
 		Region:     ev.Region,

@@ -10,6 +10,7 @@ const (
 
 type Event struct {
 	Type             string            `json:"type"`
+	ProjectKey       string            `json:"project_key,omitempty"`
 	SessionID        string            `json:"session_id"`
 	Timestamp        int64             `json:"timestamp"`
 	UserAgent        string            `json:"user_agent"`

@@ -40,6 +40,7 @@ func main() {
 	redisAddr := getEnv("REDIS_ADDR", "localhost:6379")
 	dbURL := getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/monitoring?sslmode=disable")
 	httpAddr := ":" + getEnv("FLOWLENS_BACKEND_PORT", "8081")
+	projectKeys := handler.NewProjectKeys(getEnv("FLOWLENS_PROJECT_KEYS", "pk_demo"))
 
 	pool, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
@@ -49,6 +50,9 @@ func main() {
 
 	if err := pool.Ping(ctx); err != nil {
 		log.Fatalf("pg ping: %v", err)
+	}
+	if err := ensureSchema(ctx, pool); err != nil {
+		log.Fatalf("ensure schema: %v", err)
 	}
 
 	rdb := redis.NewClient(&redis.Options{Addr: redisAddr})
@@ -74,11 +78,11 @@ func main() {
 	ingestAPI.Use(cors.New(cors.Config{
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-FlowLens-Project-Key"},
 		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
 	}))
-	ingestAPI.POST("/ingest", handler.NewIngest(producer).Handle)
+	ingestAPI.POST("/ingest", handler.NewIngest(producer, projectKeys).Handle)
 	ingestAPI.OPTIONS("/ingest", func(c *gin.Context) {
 		c.Status(http.StatusNoContent)
 	})
@@ -122,4 +126,17 @@ func getEnv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func ensureSchema(ctx context.Context, pool *pgxpool.Pool) error {
+	statements := []string{
+		`ALTER TABLE events ADD COLUMN IF NOT EXISTS project_key TEXT NOT NULL DEFAULT 'default'`,
+		`CREATE INDEX IF NOT EXISTS idx_events_project ON events(project_key)`,
+	}
+	for _, stmt := range statements {
+		if _, err := pool.Exec(ctx, stmt); err != nil {
+			return err
+		}
+	}
+	return nil
 }

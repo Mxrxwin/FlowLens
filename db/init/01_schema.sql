@@ -5,6 +5,7 @@
 CREATE TABLE events (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     type        TEXT NOT NULL,
+    project_key TEXT NOT NULL,
     session_id  TEXT NOT NULL,
     timestamp   TIMESTAMPTZ NOT NULL,
     region      TEXT,
@@ -52,6 +53,7 @@ CREATE TABLE correlations (
 );
 
 CREATE INDEX idx_events_timestamp   ON events(timestamp DESC);
+CREATE INDEX idx_events_project     ON events(project_key);
 CREATE INDEX idx_events_session     ON events(session_id);
 CREATE INDEX idx_errors_endpoint    ON errors(endpoint);
 CREATE INDEX idx_correlations_count ON correlations(count DESC);

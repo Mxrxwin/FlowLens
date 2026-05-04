@@ -27,21 +27,8 @@ services:
     env_file: ./.env
     depends_on:
       - backend
-    expose:
-      - "5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-
-  proxy:
-    image: nginx:1.27-alpine
-    depends_on:
-      - frontend
-      - backend
     ports:
-      - "${FLOWLENS_HTTP_PORT:-80}:80"
-    volumes:
-      - ./proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - "${FLOWLENS_HTTP_PORT:-5173}:80"
 
 volumes:
   pgdata:

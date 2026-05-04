@@ -2,10 +2,22 @@
 
 ## JSON-пример
 
+События отправляются в `/ingest` с публичным ключом проекта из DSN:
+
+```http
+POST /ingest
+X-FlowLens-Project-Key: pk_demo
+Content-Type: application/json
+```
+
+Ключ можно передать и через query-параметр DSN: `/ingest?project_key=pk_demo`.
+Backend валидирует ключ по `FLOWLENS_PROJECT_KEYS` и сохраняет его в `events.project_key`.
+
 ### Event: `error`
 ```json
 {
   "type": "error",
+  "project_key": "pk_demo",
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
   "timestamp": 1710000000000,
   "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 ...",
@@ -26,6 +38,7 @@
 ```json
 {
   "type": "performance",
+  "project_key": "pk_demo",
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
   "timestamp": 1710000000000,
   "user_agent": "Mozilla/5.0 ...",
@@ -44,6 +57,7 @@
 ```json
 {
   "type": "navigation",
+  "project_key": "pk_demo",
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
   "timestamp": 1710000000000,
   "user_agent": "Mozilla/5.0 ...",
@@ -61,6 +75,7 @@
 | Поле | Тип | Обязательное | Описание |
 |---|---|---|---|
 | `type` | `string` enum: `error` \| `performance` \| `navigation` | да | Дискриминатор типа события. Определяет какой блок payload присутствует |
+| `project_key` | `string` | нет | Ключ проекта. SDK обычно передаёт его в заголовке `X-FlowLens-Project-Key`, backend проставляет поле сам |
 | `session_id` | `string` (UUID v4) | да | Анонимный ID сессии из `localStorage` SDK |
 | `timestamp` | `int64` (unix ms) | да | Момент события на клиенте. Конвертируется в `TIMESTAMPTZ` при записи в `events.timestamp` |
 | `user_agent` | `string` | да | UA-строка браузера. Парсится на бэке сервиса 2 в `device_type` / `browser` / `os` |
@@ -125,7 +140,7 @@
 
 | Поле события | Таблица.колонка |
 |---|---|
-| `type`, `session_id`, `timestamp`, `user_agent`, `region` | `events.*` |
+| `type`, `project_key`, `session_id`, `timestamp`, `user_agent`, `region` | `events.*` |
 | `user_agent` → парсинг | `events.device_type`, `events.browser`, `events.os` |
 | весь JSON события | `events.payload` |
 | `error.*` | `errors.message` / `stack_trace` / `endpoint` |
