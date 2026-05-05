@@ -1,0 +1,10 @@
+# Optional local deployment settings for the Makefile.
+# Copy this file to Makefile.local and edit it for your own host.
+# Makefile.local is ignored by git.
+
+DEPLOY_HOST=flowlens.example.com
+DEPLOY_USER=deploy
+DEPLOY_DIR=/opt/flowlens
+
+# Override if the remote host uses Docker Compose v2.
+# COMPOSE_REMOTE=docker compose
