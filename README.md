@@ -142,7 +142,7 @@ reverse proxy; it is never published directly to the host by default.
 Clone the repository and prepare the environment file:
 
 ```sh
-git clone <repo-url> FlowLens
+git clone https://github.com/Mxrxwin/FlowLens.git FlowLens
 cd FlowLens
 cp .env.example .env
 ```
