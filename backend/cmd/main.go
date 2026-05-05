@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 
 	"flowlens/internal/consumer"
 	"flowlens/internal/correlation"
+	"flowlens/internal/geo"
 	"flowlens/internal/handler"
 	"flowlens/internal/processor"
 	"flowlens/internal/repository"
@@ -41,6 +43,11 @@ func main() {
 	dbURL := getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/monitoring?sslmode=disable")
 	httpAddr := ":" + getEnv("FLOWLENS_BACKEND_PORT", "8081")
 	projectKeys := handler.NewProjectKeys(getEnv("FLOWLENS_PROJECT_KEYS", "pk_demo"))
+	storeIP := getEnvBool("FLOWLENS_STORE_IP", false)
+
+	geoDB := openGeoIPDB()
+	defer geoDB.Close()
+	geoResolver := geo.NewResolver(geoDB)
 
 	pool, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
@@ -82,7 +89,7 @@ func main() {
 		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
 	}))
-	ingestAPI.POST("/ingest", handler.NewIngest(producer, projectKeys).Handle)
+	ingestAPI.POST("/ingest", handler.NewIngest(producer, projectKeys, geoResolver, storeIP).Handle)
 	ingestAPI.OPTIONS("/ingest", func(c *gin.Context) {
 		c.Status(http.StatusNoContent)
 	})
@@ -128,10 +135,42 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+func getEnvBool(key string, fallback bool) bool {
+	v := strings.ToLower(strings.TrimSpace(os.Getenv(key)))
+	switch v {
+	case "":
+		return fallback
+	case "1", "true", "yes", "on":
+		return true
+	case "0", "false", "no", "off":
+		return false
+	default:
+		log.Printf("env %s=%q is not a boolean; using %v", key, v, fallback)
+		return fallback
+	}
+}
+
+// openGeoIPDB reads FLOWLENS_GEOIP_* env vars and opens the MaxMind DB.
+// Failure is non-fatal: the handler falls back to header-based resolution.
+func openGeoIPDB() *geo.MaxMindDB {
+	if !getEnvBool("FLOWLENS_GEOIP_ENABLED", false) {
+		return nil
+	}
+	path := getEnv("FLOWLENS_GEOIP_DB_PATH", "/geoip/GeoLite2-City.mmdb")
+	db, err := geo.OpenMaxMindDB(path)
+	if err != nil {
+		log.Printf("geoip: disabled — %v (falling back to CDN headers / SDK hint)", err)
+		return nil
+	}
+	return db
+}
+
 func ensureSchema(ctx context.Context, pool *pgxpool.Pool) error {
 	statements := []string{
 		`ALTER TABLE events ADD COLUMN IF NOT EXISTS project_key TEXT NOT NULL DEFAULT 'default'`,
+		`ALTER TABLE events ADD COLUMN IF NOT EXISTS client_ip TEXT`,
 		`CREATE INDEX IF NOT EXISTS idx_events_project ON events(project_key)`,
+		`UPDATE events SET region = 'Unresolved region' WHERE region IS NULL OR region = '' OR region = 'unknown'`,
 	}
 	for _, stmt := range statements {
 		if _, err := pool.Exec(ctx, stmt); err != nil {

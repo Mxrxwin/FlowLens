@@ -52,6 +52,7 @@ func (p *Processor) HandleEvent(ctx context.Context, raw []byte) error {
 		Browser:    uaInfo.Browser,
 		OS:         uaInfo.OS,
 		UserAgent:  ev.UserAgent,
+		ClientIP:   ev.ClientIP,
 		Payload:    raw,
 	})
 	if err != nil {

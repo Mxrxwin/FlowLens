@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"flowlens/internal/geo"
 	"flowlens/internal/model"
 	"flowlens/internal/stream"
 )
@@ -14,10 +15,17 @@ import (
 type IngestHandler struct {
 	producer    *stream.Producer
 	projectKeys ProjectKeys
+	resolver    *geo.Resolver
+	storeIP     bool
 }
 
-func NewIngest(producer *stream.Producer, projectKeys ProjectKeys) *IngestHandler {
-	return &IngestHandler{producer: producer, projectKeys: projectKeys}
+func NewIngest(producer *stream.Producer, projectKeys ProjectKeys, resolver *geo.Resolver, storeIP bool) *IngestHandler {
+	return &IngestHandler{
+		producer:    producer,
+		projectKeys: projectKeys,
+		resolver:    resolver,
+		storeIP:     storeIP,
+	}
 }
 
 type ProjectKeys map[string]struct{}
@@ -58,8 +66,14 @@ func (h *IngestHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	if event.Region == "" {
-		event.Region = "unknown"
+	clientIP := geo.ClientIP(c.Request.Header, c.Request.RemoteAddr)
+	event.Region = h.resolver.Resolve(event.Region, c.Request.Header, clientIP)
+
+	// Never trust an inbound client_ip; either set our own or strip it.
+	if h.storeIP && clientIP != nil {
+		event.ClientIP = clientIP.String()
+	} else {
+		event.ClientIP = ""
 	}
 
 	data, err := json.Marshal(&event)

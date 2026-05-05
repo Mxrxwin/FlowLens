@@ -9,12 +9,16 @@ const (
 )
 
 type Event struct {
-	Type             string            `json:"type"`
-	ProjectKey       string            `json:"project_key,omitempty"`
-	SessionID        string            `json:"session_id"`
-	Timestamp        int64             `json:"timestamp"`
-	UserAgent        string            `json:"user_agent"`
-	Region           string            `json:"region,omitempty"`
+	Type       string `json:"type"`
+	ProjectKey string `json:"project_key,omitempty"`
+	SessionID  string `json:"session_id"`
+	Timestamp  int64  `json:"timestamp"`
+	UserAgent  string `json:"user_agent"`
+	Region     string `json:"region,omitempty"`
+	// ClientIP is server-side enrichment. It is intentionally accepted from
+	// the client JSON only because the ingest handler overwrites it before
+	// publishing, and is omitted entirely when FLOWLENS_STORE_IP is off.
+	ClientIP         string            `json:"client_ip,omitempty"`
 	Error            *ErrorBlock       `json:"error,omitempty"`
 	Performance      *PerformanceBlock `json:"performance,omitempty"`
 	Navigation       *NavigationBlock  `json:"navigation,omitempty"`

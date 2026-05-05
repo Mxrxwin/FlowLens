@@ -26,6 +26,7 @@ type InsertEventParams struct {
 	Browser    string
 	OS         string
 	UserAgent  string
+	ClientIP   string
 	Payload    []byte
 }
 
@@ -33,14 +34,14 @@ func (r *EventsRepo) Insert(ctx context.Context, p InsertEventParams) (uuid.UUID
 	var id uuid.UUID
 	err := r.pool.QueryRow(ctx, `
 		INSERT INTO events
-			(type, project_key, session_id, timestamp, region, device_type, browser, os, user_agent, payload)
+			(type, project_key, session_id, timestamp, region, device_type, browser, os, user_agent, client_ip, payload)
 		VALUES
-			($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''), $9, $10)
+			($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''), $9, NULLIF($10, ''), $11)
 		RETURNING id
 	`,
 		p.Type, p.ProjectKey, p.SessionID, p.Timestamp,
 		p.Region, p.DeviceType, p.Browser, p.OS,
-		p.UserAgent, p.Payload,
+		p.UserAgent, p.ClientIP, p.Payload,
 	).Scan(&id)
 	return id, err
 }

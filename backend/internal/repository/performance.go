@@ -80,7 +80,7 @@ type RegionVitals struct {
 
 func (r *PerformanceRepo) AvgVitalsByRegion(ctx context.Context, from, to time.Time) ([]RegionVitals, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT COALESCE(NULLIF(ev.region, ''), 'unknown') AS region,
+		SELECT COALESCE(NULLIF(NULLIF(ev.region, ''), 'unknown'), 'Unresolved region') AS region,
 		       COALESCE(AVG(pm.lcp),  0)::float8,
 		       COALESCE(AVG(pm.fid),  0)::float8,
 		       COALESCE(AVG(pm.ttfb), 0)::float8,
@@ -90,7 +90,7 @@ func (r *PerformanceRepo) AvgVitalsByRegion(ctx context.Context, from, to time.T
 		WHERE ev.timestamp >= $1
 		  AND ev.timestamp <= $2
 		  AND (pm.lcp IS NOT NULL OR pm.fid IS NOT NULL OR pm.ttfb IS NOT NULL)
-		GROUP BY COALESCE(NULLIF(ev.region, ''), 'unknown')
+		GROUP BY COALESCE(NULLIF(NULLIF(ev.region, ''), 'unknown'), 'Unresolved region')
 		ORDER BY region
 	`, from, to)
 	if err != nil {

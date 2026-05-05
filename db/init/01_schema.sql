@@ -13,6 +13,8 @@ CREATE TABLE events (
     browser     TEXT,
     os          TEXT,
     user_agent  TEXT,
+    -- Populated only when FLOWLENS_STORE_IP=true. NULL otherwise.
+    client_ip   TEXT,
     payload     JSONB,
     created_at  TIMESTAMPTZ DEFAULT now()
 );

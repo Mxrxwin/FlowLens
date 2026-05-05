@@ -79,7 +79,7 @@ Backend валидирует ключ по `FLOWLENS_PROJECT_KEYS` и сохра
 | `session_id` | `string` (UUID v4) | да | Анонимный ID сессии из `localStorage` SDK |
 | `timestamp` | `int64` (unix ms) | да | Момент события на клиенте. Конвертируется в `TIMESTAMPTZ` при записи в `events.timestamp` |
 | `user_agent` | `string` | да | UA-строка браузера. Парсится на бэке сервиса 2 в `device_type` / `browser` / `os` |
-| `region` | `string` | нет | Регион. Резолвится на бэке сервиса 1 через GeoIP+Redis. Симулятор передаёт явно — тогда GeoIP пропускается |
+| `region` | `string` | нет | Регион. Обычно приходит из SDK как browser timezone hint. Если поле пустое, backend пробует geo/CDN headers (`X-FlowLens-Region`, `CF-IPCity`, `CF-IPCountry`, `X-Vercel-IP-City`) и только потом ставит fallback |
 
 ---
 
