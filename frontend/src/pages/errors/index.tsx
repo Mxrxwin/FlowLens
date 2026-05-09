@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Spinner } from '@heroui/react';
+import { parseDate } from '@internationalized/date';
 import { ErrorsTable } from '../../widgets/errors-table';
 import { ErrorDetailModal } from '../../widgets/error-detail-modal';
 import { FilterErrors, emptyFilter, type ErrorsFilter } from '../../features/filter-errors';
@@ -8,6 +9,44 @@ import { usePolling } from '../../shared/lib/usePolling';
 import type { ErrorRow } from '../../entities/error/types';
 
 const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const FILTER_KEY = 'flowlens:errors:filter';
+
+function saveFilter(f: ErrorsFilter): void {
+  try {
+    localStorage.setItem(FILTER_KEY, JSON.stringify({
+      region: f.region,
+      endpoint: f.endpoint,
+      rangeMinutes: f.rangeMinutes,
+      manual: f.manual
+        ? {
+            start: f.manual.start.toDate(TZ).toISOString().slice(0, 10),
+            end:   f.manual.end.toDate(TZ).toISOString().slice(0, 10),
+          }
+        : null,
+    }));
+  } catch { /* quota exceeded or private mode */ }
+}
+
+function loadFilter(): ErrorsFilter {
+  try {
+    const raw = localStorage.getItem(FILTER_KEY);
+    if (!raw) return emptyFilter;
+    const p = JSON.parse(raw) as Record<string, unknown>;
+    return {
+      region:       typeof p.region   === 'string' ? p.region   : '',
+      endpoint:     typeof p.endpoint === 'string' ? p.endpoint : '',
+      rangeMinutes: (typeof p.rangeMinutes === 'number' ? p.rangeMinutes : emptyFilter.rangeMinutes) as ErrorsFilter['rangeMinutes'],
+      manual: p.manual && typeof (p.manual as any).start === 'string'
+        ? {
+            start: parseDate((p.manual as any).start),
+            end:   parseDate((p.manual as any).end),
+          }
+        : null,
+    };
+  } catch {
+    return emptyFilter;
+  }
+}
 
 // Manual range wins if set; otherwise sliding preset window (to = now,
 // from = now - rangeMinutes). Recomputed on every fetch tick.
@@ -32,7 +71,12 @@ function toQuery(f: ErrorsFilter): ErrorsQuery {
 }
 
 export default function ErrorsPage() {
-  const [filter, setFilter] = useState<ErrorsFilter>(emptyFilter);
+  const [filter, setFilter] = useState<ErrorsFilter>(loadFilter);
+
+  const handleFilterChange = (f: ErrorsFilter) => {
+    setFilter(f);
+    saveFilter(f);
+  };
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { data, loading, error } = usePolling<ErrorRow[]>(
@@ -43,7 +87,7 @@ export default function ErrorsPage() {
 
   return (
     <div className="space-y-4">
-      <FilterErrors value={filter} onChange={setFilter} />
+      <FilterErrors value={filter} onChange={handleFilterChange} />
       {loading ? <Spinner />
         : error ? <div className="text-danger">{error}</div>
         : <ErrorsTable items={data ?? []} onRowClick={setSelectedId} />}

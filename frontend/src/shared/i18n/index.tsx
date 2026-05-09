@@ -46,6 +46,7 @@ const translations = {
     'filter.to': 'До',
     'filter.cancel': 'Отмена',
     'filter.apply': 'Применить',
+    'filter.endBeforeStart': 'Дата «До» должна быть позже даты «От»',
 
     // Time range presets
     'range.5': 'Последние 5 минут',
@@ -118,6 +119,7 @@ const translations = {
     'filter.to': 'To',
     'filter.cancel': 'Cancel',
     'filter.apply': 'Apply',
+    'filter.endBeforeStart': '"To" date must be later than "From" date',
 
     // Time range presets
     'range.5': 'Last 5 minutes',
