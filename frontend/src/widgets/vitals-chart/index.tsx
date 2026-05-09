@@ -2,12 +2,15 @@ import { Card, CardBody, CardHeader } from '@heroui/react';
 import {
   Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
+import { useT } from '../../shared/i18n';
 import type { RegionVitals } from '../../entities/performance/types';
 
 export function VitalsChart({ items }: { items: RegionVitals[] }) {
+  const t = useT();
+
   return (
     <Card>
-      <CardHeader>Web Vitals by region (ms)</CardHeader>
+      <CardHeader>{t('vitals.chartTitle')}</CardHeader>
       <CardBody>
         <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">

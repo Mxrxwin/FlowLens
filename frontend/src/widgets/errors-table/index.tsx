@@ -1,4 +1,5 @@
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/react';
+import { useT } from '../../shared/i18n';
 import type { ErrorRow } from '../../entities/error/types';
 
 interface Props {
@@ -7,6 +8,8 @@ interface Props {
 }
 
 export function ErrorsTable({ items, onRowClick }: Props) {
+  const t = useT();
+
   return (
     <Table
       aria-label="Errors"
@@ -14,12 +17,12 @@ export function ErrorsTable({ items, onRowClick }: Props) {
       onRowAction={onRowClick ? (key) => onRowClick(String(key)) : undefined}
     >
       <TableHeader>
-        <TableColumn>TIME</TableColumn>
-        <TableColumn>MESSAGE</TableColumn>
-        <TableColumn>ENDPOINT</TableColumn>
-        <TableColumn>REGION</TableColumn>
+        <TableColumn>{t('errors.col.time')}</TableColumn>
+        <TableColumn>{t('errors.col.message')}</TableColumn>
+        <TableColumn>{t('errors.col.endpoint')}</TableColumn>
+        <TableColumn>{t('errors.col.region')}</TableColumn>
       </TableHeader>
-      <TableBody emptyContent="No errors in selected window" items={items}>
+      <TableBody emptyContent={t('errors.empty')} items={items}>
         {(row) => (
           <TableRow key={row.id} className="cursor-pointer">
             <TableCell>{new Date(row.timestamp).toLocaleString()}</TableCell>

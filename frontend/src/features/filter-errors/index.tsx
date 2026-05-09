@@ -12,30 +12,26 @@ import {
   getLocalTimeZone,
   today,
 } from "@internationalized/date";
+import { useT } from "../../shared/i18n";
+import type { TranslationKey } from "../../shared/i18n";
 
-// Placeholder makes calendar-only picks commit time = 00:00.
-// Without it, granularity="minute" leaves HH:MM as empty placeholders and
-// the value never commits when the user picks just a date in the popover.
 const midnightPlaceholder = (() => {
   const t = today(getLocalTimeZone());
   return new CalendarDateTime(t.year, t.month, t.day, 0, 0, 0);
 })();
 
 export const RANGES = [
-  { minutes: 5, label: "Last 5 minutes" },
-  { minutes: 15, label: "Last 15 minutes" },
-  { minutes: 30, label: "Last 30 minutes" },
-  { minutes: 60, label: "Last 1 hour" },
-  { minutes: 180, label: "Last 3 hours" },
-  { minutes: 360, label: "Last 6 hours" },
-  { minutes: 1440, label: "Last 24 hours" },
+  { minutes: 5,    key: 'range.5'    as TranslationKey },
+  { minutes: 15,   key: 'range.15'   as TranslationKey },
+  { minutes: 30,   key: 'range.30'   as TranslationKey },
+  { minutes: 60,   key: 'range.60'   as TranslationKey },
+  { minutes: 180,  key: 'range.180'  as TranslationKey },
+  { minutes: 360,  key: 'range.360'  as TranslationKey },
+  { minutes: 1440, key: 'range.1440' as TranslationKey },
 ] as const;
 
 export type RangeMinutes = (typeof RANGES)[number]["minutes"];
 
-// Opaque DateValue from @internationalized/date (HeroUI's transitive dep).
-// We never construct one — we only round-trip what HeroUI hands us via
-// onChange and call .toDate(tz) at query time.
 export interface DateValueLike {
   toDate(tz: string): Date;
 }
@@ -64,6 +60,7 @@ interface Props {
 }
 
 export function FilterErrors({ value, onChange }: Props) {
+  const t = useT();
   const set = <K extends keyof ErrorsFilter>(k: K, v: ErrorsFilter[K]) =>
     onChange({ ...value, [k]: v });
 
@@ -71,13 +68,13 @@ export function FilterErrors({ value, onChange }: Props) {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
       <Input
         size="sm"
-        label="Region"
+        label={t('filter.region')}
         value={value.region}
         onValueChange={(v) => set("region", v)}
       />
       <Input
         size="sm"
-        label="Endpoint"
+        label={t('filter.endpoint')}
         value={value.endpoint}
         onValueChange={(v) => set("endpoint", v)}
       />
@@ -106,33 +103,30 @@ function draftFromValue(v: ErrorsFilter): Draft {
   };
 }
 
-function describe(f: ErrorsFilter): string {
-  if (f.manual) {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const fmt = (d: Date) =>
-      d.toLocaleString([], {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    return `${fmt(f.manual.start.toDate(tz))} → ${fmt(f.manual.end.toDate(tz))}`;
-  }
-  return (
-    RANGES.find((r) => r.minutes === f.rangeMinutes)?.label ??
-    `Last ${f.rangeMinutes} min`
-  );
-}
-
 function TimeRangeControl({ value, onChange }: Props) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Draft>(() => draftFromValue(value));
 
-  // Re-sync the draft from the applied value every time the popover opens —
-  // so Cancel always discards mid-edit changes cleanly.
   useEffect(() => {
     if (open) setDraft(draftFromValue(value));
   }, [open, value]);
+
+  const describe = (f: ErrorsFilter): string => {
+    if (f.manual) {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const fmt = (d: Date) =>
+        d.toLocaleString([], {
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      return `${fmt(f.manual.start.toDate(tz))} → ${fmt(f.manual.end.toDate(tz))}`;
+    }
+    const found = RANGES.find((r) => r.minutes === f.rangeMinutes);
+    return found ? t(found.key) : `${f.rangeMinutes} min`;
+  };
 
   const isPresetActive = (m: RangeMinutes) =>
     draft.mode === "preset" && draft.rangeMinutes === m;
@@ -169,7 +163,7 @@ function TimeRangeControl({ value, onChange }: Props) {
           className="h-12 px-3 justify-start font-normal"
         >
           <div className="flex flex-col items-start leading-tight">
-            <span className="text-tiny text-default-600">Time range</span>
+            <span className="text-tiny text-default-600">{t('filter.timeRange')}</span>
             <span className="text-small">{describe(value)}</span>
           </div>
         </Button>
@@ -178,11 +172,10 @@ function TimeRangeControl({ value, onChange }: Props) {
       <PopoverContent>
         <div className="p-4 w-[480px]">
           <div className="grid grid-cols-2 gap-4">
-            {/* left: manual */}
             <div className="space-y-3">
               <DatePicker
                 size="sm"
-                label="From"
+                label={t('filter.from')}
                 granularity="minute"
                 hideTimeZone
                 placeholderValue={midnightPlaceholder}
@@ -197,7 +190,7 @@ function TimeRangeControl({ value, onChange }: Props) {
               />
               <DatePicker
                 size="sm"
-                label="To"
+                label={t('filter.to')}
                 granularity="minute"
                 hideTimeZone
                 placeholderValue={midnightPlaceholder}
@@ -212,7 +205,6 @@ function TimeRangeControl({ value, onChange }: Props) {
               />
             </div>
 
-            {/* right: presets */}
             <div className="flex flex-col gap-1">
               {RANGES.map((r) => (
                 <Button
@@ -229,7 +221,7 @@ function TimeRangeControl({ value, onChange }: Props) {
                     }))
                   }
                 >
-                  {r.label}
+                  {t(r.key)}
                 </Button>
               ))}
             </div>
@@ -237,7 +229,7 @@ function TimeRangeControl({ value, onChange }: Props) {
 
           <div className="mt-4 pt-3 border-t border-default-200 flex justify-end gap-2">
             <Button size="sm" variant="light" onPress={cancel}>
-              Cancel
+              {t('filter.cancel')}
             </Button>
             <Button
               size="sm"
@@ -245,7 +237,7 @@ function TimeRangeControl({ value, onChange }: Props) {
               isDisabled={!canApply}
               onPress={apply}
             >
-              Apply
+              {t('filter.apply')}
             </Button>
           </div>
         </div>
