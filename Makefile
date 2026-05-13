@@ -21,6 +21,8 @@ POSTGRES_DB ?= monitoring
 REDIS_ADDR ?= redis:6379
 DATABASE_URL ?= postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)?sslmode=disable
 VITE_API_URL ?=
+FLOWLENS_DASHBOARD_PASSWORD ?=
+FLOWLENS_DASHBOARD_USER ?= admin
 
 .PHONY: deploy sync remote-env remote-up ps logs down check-deploy-config
 
@@ -51,6 +53,8 @@ remote-env: check-deploy-config
 		'FLOWLENS_HTTP_PORT=$(FLOWLENS_HTTP_PORT)' \
 		'FLOWLENS_PROJECT_KEYS=$(FLOWLENS_PROJECT_KEYS)' \
 		'VITE_API_URL=$(VITE_API_URL)' \
+		'FLOWLENS_DASHBOARD_PASSWORD=$(FLOWLENS_DASHBOARD_PASSWORD)' \
+		'FLOWLENS_DASHBOARD_USER=$(FLOWLENS_DASHBOARD_USER)' \
 		> '$(DEPLOY_DIR)/.env'"
 
 remote-up: check-deploy-config
