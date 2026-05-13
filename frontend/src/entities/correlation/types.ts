@@ -1,4 +1,5 @@
 export type CorrelationSort = 'count' | 'frequency';
+export type CorrelationSince = '1h' | '24h' | '7d' | '';
 
 export interface CorrelationRow {
   error_message: string;

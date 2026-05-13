@@ -97,43 +97,80 @@ type CorrelationRow struct {
 	LastSeenAt   time.Time `json:"last_seen_at"`
 }
 
-// List returns up to `limit` correlations sorted either by `count` or by
-// `frequency` (count per minute over [first_seen_at, last_seen_at]).
-// `sort` must be "count" or "frequency" — caller is responsible for
-// validation; the value is interpolated only via a closed allowlist below.
-func (r *CorrelationsRepo) List(ctx context.Context, sort string, limit int) ([]CorrelationRow, error) {
+type ListCorrelationsParams struct {
+	Sort         string // "count" | "frequency"
+	Limit        int
+	Offset       int
+	SinceMinutes int // 0 = all time
+}
+
+type ListCorrelationsResult struct {
+	Items []CorrelationRow
+	Total int
+}
+
+// List returns a paginated, optionally time-filtered list of correlations.
+// sort must be "count" or "frequency" — validated by the caller.
+// SinceMinutes = 0 means no time filter (all time).
+func (r *CorrelationsRepo) List(ctx context.Context, p ListCorrelationsParams) (ListCorrelationsResult, error) {
 	var orderBy string
-	switch sort {
+	switch p.Sort {
 	case "frequency":
 		orderBy = "count::float8 / GREATEST(EXTRACT(EPOCH FROM (last_seen_at - first_seen_at)) / 60.0, 1.0/60.0) DESC"
 	default:
 		orderBy = "count DESC"
 	}
 
+	// Build optional WHERE clause.
+	where := ""
+	args := []any{}
+	if p.SinceMinutes > 0 {
+		where = "WHERE last_seen_at > now() - make_interval(mins => $1)"
+		args = append(args, p.SinceMinutes)
+	}
+
+	// Total count for pagination.
+	var total int
+	if err := r.pool.QueryRow(ctx,
+		fmt.Sprintf("SELECT COUNT(*) FROM correlations %s", where),
+		args...,
+	).Scan(&total); err != nil {
+		return ListCorrelationsResult{}, err
+	}
+
+	// Page query: LIMIT and OFFSET are always the last two args.
+	pageArgs := append(args, p.Limit, p.Offset)
+	limitIdx := len(pageArgs) - 1
+	offsetIdx := len(pageArgs)
+
 	q := fmt.Sprintf(`
 		SELECT error_message, endpoint, region, device_type,
 		       count, first_seen_at, last_seen_at
 		FROM correlations
+		%s
 		ORDER BY %s
-		LIMIT $1
-	`, orderBy)
+		LIMIT $%d OFFSET $%d
+	`, where, orderBy, limitIdx, offsetIdx)
 
-	rows, err := r.pool.Query(ctx, q, limit)
+	rows, err := r.pool.Query(ctx, q, pageArgs...)
 	if err != nil {
-		return nil, err
+		return ListCorrelationsResult{}, err
 	}
 	defer rows.Close()
 
-	out := make([]CorrelationRow, 0, limit)
+	out := make([]CorrelationRow, 0, p.Limit)
 	for rows.Next() {
 		var row CorrelationRow
 		if err := rows.Scan(
 			&row.ErrorMessage, &row.Endpoint, &row.Region, &row.DeviceType,
 			&row.Count, &row.FirstSeenAt, &row.LastSeenAt,
 		); err != nil {
-			return nil, err
+			return ListCorrelationsResult{}, err
 		}
 		out = append(out, row)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return ListCorrelationsResult{}, err
+	}
+	return ListCorrelationsResult{Items: out, Total: total}, nil
 }

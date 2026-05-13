@@ -16,9 +16,9 @@ export function CorrelationsList({ items }: { items: CorrelationRow[] }) {
     return <div className="text-default-500">{t("correlations.empty")}</div>;
   }
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="flex flex-col items-center gap-4 w-full">
       {items.map((c, i) => (
-        <Card key={i}>
+        <Card key={i} className="w-full max-w-2xl">
           <CardBody className="space-y-2">
             <div className="text-sm">
               {t("correlations.usersFrom")} <b>{c.region}</b>{" "}

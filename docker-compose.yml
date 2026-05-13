@@ -29,6 +29,9 @@ services:
   frontend:
     build: ./frontend
     env_file: ./.env
+    environment:
+      FLOWLENS_DASHBOARD_PASSWORD: ${FLOWLENS_DASHBOARD_PASSWORD:-}
+      FLOWLENS_DASHBOARD_USER: ${FLOWLENS_DASHBOARD_USER:-admin}
     depends_on:
       - backend
     ports:

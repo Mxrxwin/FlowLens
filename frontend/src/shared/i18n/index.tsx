@@ -67,6 +67,11 @@ const translations = {
     'correlations.on': 'на',
     'correlations.hit': 'обращаются к',
     'correlations.cases': 'случаев',
+    'correlations.since.1h': 'За час',
+    'correlations.since.24h': 'За день',
+    'correlations.since.7d': 'За неделю',
+    'correlations.since.all': 'За всё время',
+    'correlations.perPage': 'На странице',
 
     // Performance
     'perf.chartTitle': 'Среднее время ответа API по endpoints (мс)',
@@ -140,6 +145,11 @@ const translations = {
     'correlations.on': 'on',
     'correlations.hit': 'hit',
     'correlations.cases': 'cases',
+    'correlations.since.1h': 'Last hour',
+    'correlations.since.24h': 'Last 24 hours',
+    'correlations.since.7d': 'Last 7 days',
+    'correlations.since.all': 'All time',
+    'correlations.perPage': 'Per page',
 
     // Performance
     'perf.chartTitle': 'Avg API response time by endpoint (ms)',

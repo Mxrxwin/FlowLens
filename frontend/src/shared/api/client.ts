@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { Overview } from '../../entities/event/types';
 import type { ErrorRow, ErrorDetail } from '../../entities/error/types';
 import type { EndpointAvg, RegionVitals } from '../../entities/performance/types';
-import type { CorrelationRow, CorrelationSort } from '../../entities/correlation/types';
+import type { CorrelationRow, CorrelationSort, CorrelationSince } from '../../entities/correlation/types';
 
 export interface PerformanceResponse {
   endpoints: EndpointAvg[];
@@ -34,5 +34,19 @@ export const getErrorDetail = (id: string) =>
 export const getPerformance = () =>
   api.get<PerformanceResponse>('/api/performance').then(r => r.data);
 
-export const getCorrelations = (sort: CorrelationSort) =>
-  api.get<Items<CorrelationRow>>('/api/correlations', { params: { sort } }).then(r => r.data.items);
+export interface CorrelationsQuery {
+  sort: CorrelationSort;
+  page: number;
+  pageSize: number;
+  since: CorrelationSince;
+}
+
+export interface CorrelationsResponse {
+  items: CorrelationRow[];
+  total: number;
+}
+
+export const getCorrelations = (q: CorrelationsQuery) =>
+  api.get<CorrelationsResponse>('/api/correlations', {
+    params: { sort: q.sort, page: q.page, page_size: q.pageSize, since: q.since },
+  }).then(r => r.data);
