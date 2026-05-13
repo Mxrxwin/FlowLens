@@ -1,0 +1,34 @@
+{
+  "name": "@mxrxwin/flowlens-sdk",
+  "version": "0.1.0",
+  "description": "Browser SDK for FlowLens — self-hosted web monitoring",
+  "keywords": ["monitoring", "analytics", "error-tracking", "web-vitals", "self-hosted"],
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "axios": ">=1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "axios": { "optional": true }
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "axios": "^1.7.0"
+  }
+}
