@@ -1,6 +1,6 @@
 {
   "name": "@mxrxwin/flowlens-sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Browser SDK for FlowLens — self-hosted web monitoring",
   "keywords": ["monitoring", "analytics", "error-tracking", "web-vitals", "self-hosted"],
   "license": "MIT",
@@ -14,7 +14,7 @@
       "require": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
