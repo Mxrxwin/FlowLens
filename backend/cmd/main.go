@@ -81,6 +81,8 @@ func main() {
 
 	r := gin.Default()
 
+	r.GET("/health", handler.NewHealth(pool, rdb).Handle)
+
 	ingestAPI := r.Group("/")
 	ingestAPI.Use(cors.New(cors.Config{
 		AllowAllOrigins:  true,
@@ -89,7 +91,11 @@ func main() {
 		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
 	}))
-	ingestAPI.POST("/ingest", handler.NewIngest(producer, projectKeys, geoResolver, storeIP).Handle)
+	ingestAPI.POST("/ingest",
+		handler.MaxBodySize(64*1024), // 64 KB
+		handler.IngestRateLimiter(20, 60),
+		handler.NewIngest(producer, projectKeys, geoResolver, storeIP).Handle,
+	)
 	ingestAPI.OPTIONS("/ingest", func(c *gin.Context) {
 		c.Status(http.StatusNoContent)
 	})
