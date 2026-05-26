@@ -24,6 +24,7 @@ import (
 	"flowlens/internal/processor"
 	"flowlens/internal/repository"
 	"flowlens/internal/stream"
+	"flowlens/internal/system"
 )
 
 const streamKey = "monitoring-events"
@@ -79,6 +80,9 @@ func main() {
 	cons := consumer.New(rdb, streamKey, proc)
 	producer := stream.NewProducer(rdb, streamKey)
 
+	sysCollector := system.NewCollector()
+	go sysCollector.Run(ctx)
+
 	r := gin.Default()
 
 	r.GET("/health", handler.NewHealth(pool, rdb).Handle)
@@ -107,6 +111,7 @@ func main() {
 	api.GET("/errors/:id", errorsAPI.Detail)
 	api.GET("/performance", handler.NewPerformance(perfRepo).List)
 	api.GET("/correlations", handler.NewCorrelations(corrRepo).List)
+	api.GET("/system", handler.NewSystem(sysCollector).Handle)
 
 	srv := &http.Server{Addr: httpAddr, Handler: r}
 

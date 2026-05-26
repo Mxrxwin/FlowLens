@@ -82,6 +82,16 @@ const translations = {
     'perf.p99': 'P99',
     'vitals.chartTitle': 'Web Vitals по регионам (мс)',
 
+    // System
+    'nav.system': 'Система',
+    'system.chartTitle': 'Нагрузка сервера (последние 5 мин)',
+    'system.cpu': 'CPU',
+    'system.ram': 'RAM',
+    'system.cpuCurrent': 'CPU · сейчас',
+    'system.ramCurrent': 'RAM · сейчас',
+    'system.cpuSub': 'загрузка процессора',
+    'system.collecting': 'Собираем данные… первый сэмпл через ~5 сек',
+
     // Settings popover
     'settings.label': 'Настройки',
     'settings.language': 'Язык',
@@ -164,6 +174,16 @@ const translations = {
     'perf.p95': 'P95',
     'perf.p99': 'P99',
     'vitals.chartTitle': 'Web Vitals by region (ms)',
+
+    // System
+    'nav.system': 'System',
+    'system.chartTitle': 'Server load (last 5 min)',
+    'system.cpu': 'CPU',
+    'system.ram': 'RAM',
+    'system.cpuCurrent': 'CPU · now',
+    'system.ramCurrent': 'RAM · now',
+    'system.cpuSub': 'processor utilization',
+    'system.collecting': 'Collecting data… first sample in ~5 sec',
 
     // Settings popover
     'settings.label': 'Settings',

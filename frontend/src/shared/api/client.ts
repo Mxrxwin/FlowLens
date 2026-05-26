@@ -3,6 +3,7 @@ import type { Overview } from '../../entities/event/types';
 import type { ErrorRow, ErrorDetail } from '../../entities/error/types';
 import type { EndpointAvg, RegionVitals } from '../../entities/performance/types';
 import type { CorrelationRow, CorrelationSort, CorrelationSince } from '../../entities/correlation/types';
+import type { SystemStats } from '../../entities/system/types';
 
 export interface PerformanceResponse {
   endpoints: EndpointAvg[];
@@ -50,3 +51,6 @@ export const getCorrelations = (q: CorrelationsQuery) =>
   api.get<CorrelationsResponse>('/api/correlations', {
     params: { sort: q.sort, page: q.page, page_size: q.pageSize, since: q.since },
   }).then(r => r.data);
+
+export const getSystem = () =>
+  api.get<SystemStats>('/api/system').then(r => r.data);
