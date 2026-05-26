@@ -16,6 +16,8 @@ const translations = {
     // Overview
     'overview.events5m': 'События · последние 5 мин',
     'overview.errors5m': 'Ошибки · последние 5 мин',
+    'overview.errorRate': 'Error rate · 5 мин',
+    'overview.rps': 'Throughput · RPS (5 мин)',
 
     // Errors table
     'errors.col.time': 'ВРЕМЯ',
@@ -74,7 +76,10 @@ const translations = {
     'correlations.perPage': 'На странице',
 
     // Performance
-    'perf.chartTitle': 'Среднее время ответа API по endpoints (мс)',
+    'perf.chartTitle': 'Время ответа API по endpoints (мс)',
+    'perf.avg': 'Среднее',
+    'perf.p95': 'P95',
+    'perf.p99': 'P99',
     'vitals.chartTitle': 'Web Vitals по регионам (мс)',
 
     // Settings popover
@@ -94,6 +99,8 @@ const translations = {
     // Overview
     'overview.events5m': 'Events · last 5 min',
     'overview.errors5m': 'Errors · last 5 min',
+    'overview.errorRate': 'Error rate · 5 min',
+    'overview.rps': 'Throughput · RPS (5 min)',
 
     // Errors table
     'errors.col.time': 'TIME',
@@ -152,7 +159,10 @@ const translations = {
     'correlations.perPage': 'Per page',
 
     // Performance
-    'perf.chartTitle': 'Avg API response time by endpoint (ms)',
+    'perf.chartTitle': 'API response time by endpoint (ms)',
+    'perf.avg': 'Avg',
+    'perf.p95': 'P95',
+    'perf.p99': 'P99',
     'vitals.chartTitle': 'Web Vitals by region (ms)',
 
     // Settings popover

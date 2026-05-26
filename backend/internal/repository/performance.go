@@ -38,6 +38,8 @@ func (r *PerformanceRepo) Insert(ctx context.Context, p InsertPerformanceParams)
 type EndpointAvg struct {
 	Endpoint          string  `json:"endpoint"`
 	AvgResponseTimeMs float64 `json:"avg_response_time_ms"`
+	P95ResponseTimeMs float64 `json:"p95_response_time_ms"`
+	P99ResponseTimeMs float64 `json:"p99_response_time_ms"`
 	Samples           int     `json:"samples"`
 }
 
@@ -45,6 +47,8 @@ func (r *PerformanceRepo) AvgByEndpoint(ctx context.Context, from, to time.Time)
 	rows, err := r.pool.Query(ctx, `
 		SELECT COALESCE(pm.endpoint, ''),
 		       AVG(pm.api_response_time)::float8,
+		       percentile_cont(0.95) WITHIN GROUP (ORDER BY pm.api_response_time)::float8,
+		       percentile_cont(0.99) WITHIN GROUP (ORDER BY pm.api_response_time)::float8,
 		       COUNT(*)
 		FROM performance_metrics pm
 		JOIN events ev ON pm.event_id = ev.id
@@ -62,7 +66,7 @@ func (r *PerformanceRepo) AvgByEndpoint(ctx context.Context, from, to time.Time)
 	out := make([]EndpointAvg, 0)
 	for rows.Next() {
 		var row EndpointAvg
-		if err := rows.Scan(&row.Endpoint, &row.AvgResponseTimeMs, &row.Samples); err != nil {
+		if err := rows.Scan(&row.Endpoint, &row.AvgResponseTimeMs, &row.P95ResponseTimeMs, &row.P99ResponseTimeMs, &row.Samples); err != nil {
 			return nil, err
 		}
 		out = append(out, row)

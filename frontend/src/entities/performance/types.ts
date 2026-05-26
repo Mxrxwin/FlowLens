@@ -1,6 +1,8 @@
 export interface EndpointAvg {
   endpoint: string;
   avg_response_time_ms: number;
+  p95_response_time_ms: number;
+  p99_response_time_ms: number;
   samples: number;
 }
 
